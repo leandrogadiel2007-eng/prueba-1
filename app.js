@@ -220,14 +220,39 @@ function updateHistoryButtons() {
 }
 
 function isSolved() {
-  return cubies.every(cubie => {
-    const home = cubie.userData.home;
-    const atHome = cubie.position.distanceTo(home) < 0.025;
-    const q = cubie.quaternion;
-    const sameRotation = Math.abs(q.x) < 0.01 && Math.abs(q.y) < 0.01 &&
-      Math.abs(q.z) < 0.01 && Math.abs(Math.abs(q.w) - 1) < 0.01;
-    return atHome && sameRotation;
-  });
+  const localNormals = [
+    new THREE.Vector3(1, 0, 0), new THREE.Vector3(-1, 0, 0),
+    new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, -1, 0),
+    new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, -1)
+  ];
+  const exposedFaces = [
+    { axis: 0, side: 1, expected: materials.right, normal: new THREE.Vector3(1, 0, 0) },
+    { axis: 0, side: -1, expected: materials.left, normal: new THREE.Vector3(-1, 0, 0) },
+    { axis: 1, side: 1, expected: materials.up, normal: new THREE.Vector3(0, 1, 0) },
+    { axis: 1, side: -1, expected: materials.down, normal: new THREE.Vector3(0, -1, 0) },
+    { axis: 2, side: 1, expected: materials.front, normal: new THREE.Vector3(0, 0, 1) },
+    { axis: 2, side: -1, expected: materials.back, normal: new THREE.Vector3(0, 0, -1) }
+  ];
+
+  for (const cubie of cubies) {
+    const indexes = [
+      layerIndex(cubie.position.x),
+      layerIndex(cubie.position.y),
+      layerIndex(cubie.position.z)
+    ];
+    for (const face of exposedFaces) {
+      const isOnFace = face.side > 0
+        ? indexes[face.axis] === cubeSize - 1
+        : indexes[face.axis] === 0;
+      if (!isOnFace) continue;
+
+      const stickerIndex = localNormals.findIndex(normal =>
+        normal.clone().applyQuaternion(cubie.quaternion).dot(face.normal) > 0.999
+      );
+      if (stickerIndex < 0 || cubie.material[stickerIndex] !== face.expected) return false;
+    }
+  }
+  return true;
 }
 
 function updateStatus() {
