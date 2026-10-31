@@ -116,3 +116,9 @@ kbd { display: inline-block; padding: 2px 4px; margin: 0 1px; border: 1px solid 
   .face-row { grid-template-columns: 1fr repeat(3, 49px); }
   .face-name { font-size: 12px; }
 }
+.cube-type-picker { display:flex; flex-direction:column; gap:7px; margin:15px 0 12px; }
+.cube-type-picker label { color:#7faef0; font-size:9px; font-weight:800; letter-spacing:.16em; }
+.cube-type-picker select { width:100%; height:39px; padding:0 11px; color:#e9f2ff; background:#1a2c43; border:1px solid #385575; border-radius:8px; font:600 11px "DM Sans",sans-serif; outline:none; }
+.cube-type-picker select:focus { border-color:#79adf2; box-shadow:0 0 0 2px #79adf222; }
+.cube-type-picker option { background:#142238; color:#edf5ff; }
+.type-description { color:#849bb7; font-size:10px; margin:0; line-height:1.4; }
