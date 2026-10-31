@@ -70,7 +70,7 @@ function makeCubie(x, y, z) {
 
 function createSolvedCube() {
   for (const cubie of cubies) {
-    cubeGroup.remove(cubie);
+    cubie.parent?.remove(cubie);
     cubie.geometry.dispose();
     cubie.material.forEach(material => material.dispose());
   }
@@ -105,6 +105,8 @@ let moveCount = 0;
 let history = [];
 let redoStack = [];
 let scrambleMode = false;
+let activePivot = null;
+let animationGeneration = 0;
 
 function parseMove(notation) {
   const face = notation[0];
@@ -145,7 +147,9 @@ function runNextMove() {
   moving = true;
   const item = queue.shift();
   const move = parseMove(item.notation);
+  const generation = animationGeneration;
   const pivot = new THREE.Group();
+  activePivot = pivot;
   cubeGroup.add(pivot);
   const selected = cubies.filter(cubie => Math.round(cubie.position[move.axis] / spacing) === move.layer);
   selected.forEach(cubie => pivot.attach(cubie));
@@ -156,6 +160,7 @@ function runNextMove() {
   const to = move.angle;
 
   function animate(now) {
+    if (generation !== animationGeneration) return;
     const t = Math.min(1, (now - start) / duration);
     const eased = 1 - Math.pow(1 - t, 3);
     pivot.rotation[move.axis] = from + (to - from) * eased;
@@ -170,6 +175,7 @@ function runNextMove() {
       snapCubie(cubie);
     });
     cubeGroup.remove(pivot);
+    activePivot = null;
     moveCount++;
     countLabel.textContent = String(moveCount);
     updateStatus();
@@ -215,8 +221,14 @@ function updateStatus() {
 }
 
 function resetCube() {
+  animationGeneration++;
   queue.length = 0;
   moving = false;
+  if (activePivot) {
+    for (const child of [...activePivot.children]) cubeGroup.attach(child);
+    cubeGroup.remove(activePivot);
+    activePivot = null;
+  }
   history = [];
   redoStack = [];
   moveCount = 0;
