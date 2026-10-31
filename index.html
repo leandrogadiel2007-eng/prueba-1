@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101827">
+  <meta name="description" content="Cubo de Rubik 3x3 interactivo. Gira sus caras, mezcla el cubo y resuélvelo.">
+  <title>Cubo 3×3 — Rubik Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Rubik Lab inicio">
+        <span class="brand-mark"><i></i><i></i><i></i><i></i></span>
+        <span>RUBIK<span class="brand-light">LAB</span></span>
+      </a>
+      <div class="top-note"><span class="status-dot"></span> CUBO INTERACTIVO 3×3</div>
+    </header>
+
+    <section class="intro">
+      <div>
+        <p class="eyebrow">TU ESPACIO DE PRÁCTICA</p>
+        <h1>Resuelve el <span>cubo.</span></h1>
+        <p class="subtitle">Gira las caras, explora el cubo y encuentra la solución movimiento a movimiento.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="stat-label">MOVIMIENTOS</span><strong id="move-count">0</strong></div>
+        <div class="stat"><span class="stat-label">ESTADO</span><strong id="cube-status" class="status-text">Resuelto</strong></div>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <div class="viewer-card">
+        <div class="viewer-heading">
+          <div><span class="live-dot"></span><span>VISTA 3D</span></div>
+          <span class="viewer-hint">ARRASTRA PARA ROTAR LA VISTA</span>
+        </div>
+        <div id="cube-view" class="cube-view">
+          <div class="loading" id="loading">Preparando cubo 3D…</div>
+        </div>
+        <div class="viewer-footer">
+          <span><span class="mouse-icon">↗</span> Mouse: orbitar · Rueda: zoom</span>
+          <button id="view-reset" class="text-button" type="button">Restablecer vista <span>↺</span></button>
+        </div>
+      </div>
+
+      <aside class="control-card">
+        <div class="section-title">
+          <div><p class="eyebrow">CONTROLES</p><h2>Gira las caras</h2></div>
+          <span class="move-badge">3×3</span>
+        </div>
+        <p class="helper">Selecciona una cara para girarla 90°. Usa el botón con prima para invertir el giro.</p>
+
+        <div class="face-grid" aria-label="Movimientos del cubo">
+          <div class="face-row"><span class="face-name">U <small>Arriba</small></span><button data-move="U" class="turn-button">U <span>↻</span></button><button data-move="U'" class="turn-button inverse">U′ <span>↺</span></button><button data-move="U2" class="turn-button double">U2</button></div>
+          <div class="face-row"><span class="face-name">D <small>Abajo</small></span><button data-move="D" class="turn-button">D <span>↻</span></button><button data-move="D'" class="turn-button inverse">D′ <span>↺</span></button><button data-move="D2" class="turn-button double">D2</button></div>
+          <div class="face-row"><span class="face-name">R <small>Derecha</small></span><button data-move="R" class="turn-button">R <span>↻</span></button><button data-move="R'" class="turn-button inverse">R′ <span>↺</span></button><button data-move="R2" class="turn-button double">R2</button></div>
+          <div class="face-row"><span class="face-name">L <small>Izquierda</small></span><button data-move="L" class="turn-button">L <span>↻</span></button><button data-move="L'" class="turn-button inverse">L′ <span>↺</span></button><button data-move="L2" class="turn-button double">L2</button></div>
+          <div class="face-row"><span class="face-name">F <small>Frente</small></span><button data-move="F" class="turn-button">F <span>↻</span></button><button data-move="F'" class="turn-button inverse">F′ <span>↺</span></button><button data-move="F2" class="turn-button double">F2</button></div>
+          <div class="face-row"><span class="face-name">B <small>Atrás</small></span><button data-move="B" class="turn-button">B <span>↻</span></button><button data-move="B'" class="turn-button inverse">B′ <span>↺</span></button><button data-move="B2" class="turn-button double">B2</button></div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="action-row">
+          <button id="undo" class="secondary-button" type="button" disabled><span>↶</span> Deshacer</button>
+          <button id="redo" class="secondary-button" type="button" disabled><span>↷</span> Rehacer</button>
+        </div>
+        <button id="scramble" class="primary-button" type="button"><span>⤨</span> Mezclar cubo</button>
+        <button id="solve-reset" class="reset-button" type="button"><span>⟲</span> Reiniciar cubo</button>
+        <p class="keyboard-tip">ATAJOS: <kbd>U</kbd> <kbd>D</kbd> <kbd>R</kbd> <kbd>L</kbd> <kbd>F</kbd> <kbd>B</kbd> · <kbd>Shift</kbd> para invertir</p>
+      </aside>
+    </section>
+
+    <footer class="footer">
+      <span>RUBIK LAB <span class="footer-separator">/</span> PRACTICA A TU RITMO</span>
+      <span>Un giro a la vez.</span>
+    </footer>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
