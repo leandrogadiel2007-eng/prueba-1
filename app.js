@@ -50,6 +50,8 @@ const cubeGroup = new THREE.Group();
 scene.add(cubeGroup);
 let cubies = [];
 let cubeletGeometry = null;
+let stickerGeometry = null;
+let pieceSize = 0;
 let cubeSize = 3;
 let spacing = 2.75 / cubeSize;
 const black = 0x11151d;
@@ -72,22 +74,35 @@ function coordinate(index) {
   return (index - (cubeSize - 1) / 2) * spacing;
 }
 
+function addSticker(group, material, position, rotation) {
+  const sticker = new THREE.Mesh(stickerGeometry, material);
+  sticker.position.copy(position);
+  sticker.rotation.set(rotation.x, rotation.y, rotation.z);
+  sticker.castShadow = false;
+  sticker.receiveShadow = false;
+  group.add(sticker);
+}
+
 function makeCubie(x, y, z) {
-  const faceMaterials = [
-    x === cubeSize - 1 ? materials.right : materials.black,
-    x === 0 ? materials.left : materials.black,
-    y === cubeSize - 1 ? materials.up : materials.black,
-    y === 0 ? materials.down : materials.black,
-    z === cubeSize - 1 ? materials.front : materials.black,
-    z === 0 ? materials.back : materials.black
-  ];
-  const mesh = new THREE.Mesh(cubeletGeometry, faceMaterials);
-  mesh.position.set(coordinate(x), coordinate(y), coordinate(z));
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  mesh.userData.home = mesh.position.clone();
-  cubeGroup.add(mesh);
-  cubies.push(mesh);
+  const group = new THREE.Group();
+  group.position.set(coordinate(x), coordinate(y), coordinate(z));
+
+  const body = new THREE.Mesh(cubeletGeometry, materials.black);
+  body.castShadow = true;
+  body.receiveShadow = true;
+  group.add(body);
+
+  const h = pieceSize / 2 + 0.007;
+  if (x === cubeSize - 1) addSticker(group, materials.right, new THREE.Vector3(h, 0, 0), new THREE.Euler(0, Math.PI / 2, 0));
+  if (x === 0) addSticker(group, materials.left, new THREE.Vector3(-h, 0, 0), new THREE.Euler(0, -Math.PI / 2, 0));
+  if (y === cubeSize - 1) addSticker(group, materials.up, new THREE.Vector3(0, h, 0), new THREE.Euler(-Math.PI / 2, 0, 0));
+  if (y === 0) addSticker(group, materials.down, new THREE.Vector3(0, -h, 0), new THREE.Euler(Math.PI / 2, 0, 0));
+  if (z === cubeSize - 1) addSticker(group, materials.front, new THREE.Vector3(0, 0, h), new THREE.Euler(0, 0, 0));
+  if (z === 0) addSticker(group, materials.back, new THREE.Vector3(0, 0, -h), new THREE.Euler(0, Math.PI, 0));
+
+  group.userData.home = group.position.clone();
+  cubeGroup.add(group);
+  cubies.push(group);
 }
 
 let queue = [];
@@ -103,9 +118,11 @@ function createSolvedCube() {
   cubeGroup.clear();
   cubies = [];
   spacing = 2.75 / cubeSize;
-  const pieceSize = spacing * 0.91;
+  pieceSize = spacing * 0.91;
   if (cubeletGeometry) cubeletGeometry.dispose();
+  if (stickerGeometry) stickerGeometry.dispose();
   cubeletGeometry = new THREE.BoxGeometry(pieceSize, pieceSize, pieceSize);
+  stickerGeometry = new THREE.PlaneGeometry(pieceSize * 0.76, pieceSize * 0.76);
   for (let x = 0; x < cubeSize; x++) {
     for (let y = 0; y < cubeSize; y++) {
       for (let z = 0; z < cubeSize; z++) makeCubie(x, y, z);
