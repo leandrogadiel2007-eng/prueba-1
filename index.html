@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#101827">
-  <meta name="description" content="Cubo de Rubik 3x3 interactivo. Gira sus caras, mezcla el cubo y resuélvelo.">
-  <title>Cubo 3×3 — Rubik Lab</title>
+  <meta name="description" content="Colección interactiva de cubos 2×2 a 7×7. Gira sus caras y practica.">
+  <title>Rubik Lab — Cubos 2×2 a 7×7</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -18,14 +18,14 @@
         <span class="brand-mark"><i></i><i></i><i></i><i></i></span>
         <span>RUBIK<span class="brand-light">LAB</span></span>
       </a>
-      <div class="top-note"><span class="status-dot"></span> CUBO INTERACTIVO 3×3</div>
+      <div class="top-note"><span class="status-dot"></span> CUBOS INTERACTIVOS 2×2 A 7×7</div>
     </header>
 
     <section class="intro">
       <div>
         <p class="eyebrow">TU ESPACIO DE PRÁCTICA</p>
         <h1>Resuelve el <span>cubo.</span></h1>
-        <p class="subtitle">Gira las caras, explora el cubo y encuentra la solución movimiento a movimiento.</p>
+        <p class="subtitle">Elige el tamaño, gira sus capas y practica con diferentes niveles de dificultad.</p>
       </div>
       <div class="stats">
         <div class="stat"><span class="stat-label">MOVIMIENTOS</span><strong id="move-count">0</strong></div>
@@ -51,9 +51,21 @@
       <aside class="control-card">
         <div class="section-title">
           <div><p class="eyebrow">CONTROLES</p><h2>Gira las caras</h2></div>
-          <span class="move-badge">3×3</span>
+          <span class="move-badge" id="size-badge">3×3</span>
         </div>
-        <p class="helper">Selecciona una cara para girarla 90°. Usa el botón con prima para invertir el giro.</p>
+        <div class="cube-type-picker">
+          <label for="cube-type">ELIGE TU CUBO</label>
+          <select id="cube-type">
+            <option value="2">2×2×2 · Pocket Cube</option>
+            <option value="3" selected>3×3×3 · Clásico</option>
+            <option value="4">4×4×4 · Rubik's Revenge</option>
+            <option value="5">5×5×5 · Professor's Cube</option>
+            <option value="6">6×6×6 · V-Cube 6</option>
+            <option value="7">7×7×7 · V-Cube 7</option>
+          </select>
+          <p class="type-description" id="cube-description">El clásico de seis caras y tres capas por lado.</p>
+        </div>
+        <p class="helper">Selecciona una cara para girar su capa exterior 90°. Usa la prima para invertir el giro y 2 para girar 180°.</p>
 
         <div class="face-grid" aria-label="Movimientos del cubo">
           <div class="face-row"><span class="face-name">U <small>Arriba</small></span><button data-move="U" class="turn-button">U <span>↻</span></button><button data-move="U'" class="turn-button inverse">U′ <span>↺</span></button><button data-move="U2" class="turn-button double">U2</button></div>
