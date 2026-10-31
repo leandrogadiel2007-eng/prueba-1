@@ -7,18 +7,27 @@ const countLabel = document.getElementById("move-count");
 const statusLabel = document.getElementById("cube-status");
 const undoButton = document.getElementById("undo");
 const redoButton = document.getElementById("redo");
+const typeSelect = document.getElementById("cube-type");
+const sizeBadge = document.getElementById("size-badge");
+const description = document.getElementById("cube-description");
+
+const TYPE_INFO = {
+  2: "Pocket Cube: solo tiene esquinas; es compacto y rápido de resolver.",
+  3: "El clásico de seis caras y tres capas por lado.",
+  4: "Rubik's Revenge: añade centros móviles y aristas emparejadas.",
+  5: "Professor's Cube: cinco capas por lado y más piezas que organizar.",
+  6: "Seis capas por lado: un reto avanzado con paridad.",
+  7: "Siete capas por lado: el mayor tamaño de esta colección."
+};
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#172a42");
-
 const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
 camera.position.set(5.4, 4.4, 6.2);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 host.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -39,64 +48,46 @@ scene.add(fillLight);
 
 const cubeGroup = new THREE.Group();
 scene.add(cubeGroup);
-const cubies = [];
-const size = 0.94;
-const spacing = 1.015;
+let cubies = [];
+let cubeletGeometry = null;
+let cubeSize = 3;
+let spacing = 2.75 / cubeSize;
 const black = 0x11151d;
 const faceColors = {
   right: 0xe84148, left: 0xff8a28,
   up: 0xf5f4eb, down: 0xffd32f,
   front: 0x24b66e, back: 0x287ce5
 };
+const materials = {
+  black: new THREE.MeshStandardMaterial({ color: black, roughness: 0.52 }),
+  right: new THREE.MeshStandardMaterial({ color: faceColors.right, roughness: 0.48 }),
+  left: new THREE.MeshStandardMaterial({ color: faceColors.left, roughness: 0.48 }),
+  up: new THREE.MeshStandardMaterial({ color: faceColors.up, roughness: 0.48 }),
+  down: new THREE.MeshStandardMaterial({ color: faceColors.down, roughness: 0.48 }),
+  front: new THREE.MeshStandardMaterial({ color: faceColors.front, roughness: 0.48 }),
+  back: new THREE.MeshStandardMaterial({ color: faceColors.back, roughness: 0.48 })
+};
+
+function coordinate(index) {
+  return (index - (cubeSize - 1) / 2) * spacing;
+}
 
 function makeCubie(x, y, z) {
-  const materials = [
-    new THREE.MeshStandardMaterial({ color: x === 1 ? faceColors.right : black, roughness: 0.48 }),
-    new THREE.MeshStandardMaterial({ color: x === -1 ? faceColors.left : black, roughness: 0.48 }),
-    new THREE.MeshStandardMaterial({ color: y === 1 ? faceColors.up : black, roughness: 0.48 }),
-    new THREE.MeshStandardMaterial({ color: y === -1 ? faceColors.down : black, roughness: 0.48 }),
-    new THREE.MeshStandardMaterial({ color: z === 1 ? faceColors.front : black, roughness: 0.48 }),
-    new THREE.MeshStandardMaterial({ color: z === -1 ? faceColors.back : black, roughness: 0.48 })
+  const faceMaterials = [
+    x === cubeSize - 1 ? materials.right : materials.black,
+    x === 0 ? materials.left : materials.black,
+    y === cubeSize - 1 ? materials.up : materials.black,
+    y === 0 ? materials.down : materials.black,
+    z === cubeSize - 1 ? materials.front : materials.black,
+    z === 0 ? materials.back : materials.black
   ];
-  const mesh = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), materials);
-  mesh.position.set(x * spacing, y * spacing, z * spacing);
+  const mesh = new THREE.Mesh(cubeletGeometry, faceMaterials);
+  mesh.position.set(coordinate(x), coordinate(y), coordinate(z));
   mesh.castShadow = true;
   mesh.receiveShadow = true;
-  mesh.userData.home = { x, y, z };
-  mesh.userData.homeQuaternion = new THREE.Quaternion();
+  mesh.userData.home = mesh.position.clone();
   cubeGroup.add(mesh);
   cubies.push(mesh);
-}
-
-function createSolvedCube() {
-  for (const cubie of cubies) {
-    cubie.parent?.remove(cubie);
-    cubie.geometry.dispose();
-    cubie.material.forEach(material => material.dispose());
-  }
-  cubies.length = 0;
-  for (let x = -1; x <= 1; x++) {
-    for (let y = -1; y <= 1; y++) {
-      for (let z = -1; z <= 1; z++) makeCubie(x, y, z);
-    }
-  }
-  updateStatus();
-}
-
-function snapCubie(cubie) {
-  cubie.position.set(
-    Math.round(cubie.position.x / spacing) * spacing,
-    Math.round(cubie.position.y / spacing) * spacing,
-    Math.round(cubie.position.z / spacing) * spacing
-  );
-  const euler = new THREE.Euler().setFromQuaternion(cubie.quaternion, "XYZ");
-  const step = Math.PI / 2;
-  cubie.rotation.set(
-    Math.round(euler.x / step) * step,
-    Math.round(euler.y / step) * step,
-    Math.round(euler.z / step) * step,
-    "XYZ"
-  );
 }
 
 let queue = [];
@@ -108,6 +99,41 @@ let scrambleMode = false;
 let activePivot = null;
 let animationGeneration = 0;
 
+function createSolvedCube() {
+  cubeGroup.clear();
+  cubies = [];
+  spacing = 2.75 / cubeSize;
+  const pieceSize = spacing * 0.91;
+  if (cubeletGeometry) cubeletGeometry.dispose();
+  cubeletGeometry = new THREE.BoxGeometry(pieceSize, pieceSize, pieceSize);
+  for (let x = 0; x < cubeSize; x++) {
+    for (let y = 0; y < cubeSize; y++) {
+      for (let z = 0; z < cubeSize; z++) makeCubie(x, y, z);
+    }
+  }
+  updateStatus();
+}
+
+function layerIndex(position) {
+  return Math.round(position / spacing + (cubeSize - 1) / 2);
+}
+
+function snapCubie(cubie) {
+  cubie.position.set(
+    (layerIndex(cubie.position.x) - (cubeSize - 1) / 2) * spacing,
+    (layerIndex(cubie.position.y) - (cubeSize - 1) / 2) * spacing,
+    (layerIndex(cubie.position.z) - (cubeSize - 1) / 2) * spacing
+  );
+  const euler = new THREE.Euler().setFromQuaternion(cubie.quaternion, "XYZ");
+  const step = Math.PI / 2;
+  cubie.rotation.set(
+    Math.round(euler.x / step) * step,
+    Math.round(euler.y / step) * step,
+    Math.round(euler.z / step) * step,
+    "XYZ"
+  );
+}
+
 function parseMove(notation) {
   const face = notation[0];
   const suffix = notation.slice(1);
@@ -116,11 +142,12 @@ function parseMove(notation) {
     U: ["y", 1], D: ["y", -1],
     F: ["z", 1], B: ["z", -1]
   };
-  const [axis, layer] = config[face];
-  let angle = -layer * Math.PI / 2;
+  const [axis, side] = config[face];
+  const layer = side > 0 ? cubeSize - 1 : 0;
+  let angle = -side * Math.PI / 2;
   if (suffix === "'") angle *= -1;
   if (suffix === "2") angle *= 2;
-  return { face, axis, layer, angle };
+  return { axis, layer, angle };
 }
 
 function enqueueMove(notation, record = true) {
@@ -151,19 +178,17 @@ function runNextMove() {
   const pivot = new THREE.Group();
   activePivot = pivot;
   cubeGroup.add(pivot);
-  const selected = cubies.filter(cubie => Math.round(cubie.position[move.axis] / spacing) === move.layer);
+  const selected = cubies.filter(cubie => layerIndex(cubie.position[move.axis]) === move.layer);
   selected.forEach(cubie => pivot.attach(cubie));
 
   const start = performance.now();
   const duration = item.notation.endsWith("2") ? 245 : 190;
-  const from = 0;
-  const to = move.angle;
 
   function animate(now) {
     if (generation !== animationGeneration) return;
     const t = Math.min(1, (now - start) / duration);
     const eased = 1 - Math.pow(1 - t, 3);
-    pivot.rotation[move.axis] = from + (to - from) * eased;
+    pivot.rotation[move.axis] = move.angle * eased;
 
     if (t < 1) {
       requestAnimationFrame(animate);
@@ -181,7 +206,6 @@ function runNextMove() {
     updateStatus();
     runNextMove();
   }
-
   requestAnimationFrame(animate);
 }
 
@@ -198,10 +222,7 @@ function updateHistoryButtons() {
 function isSolved() {
   return cubies.every(cubie => {
     const home = cubie.userData.home;
-    const atHome =
-      Math.abs(cubie.position.x - home.x * spacing) < 0.025 &&
-      Math.abs(cubie.position.y - home.y * spacing) < 0.025 &&
-      Math.abs(cubie.position.z - home.z * spacing) < 0.025;
+    const atHome = cubie.position.distanceTo(home) < 0.025;
     const q = cubie.quaternion;
     const sameRotation = Math.abs(q.x) < 0.01 && Math.abs(q.y) < 0.01 &&
       Math.abs(q.z) < 0.01 && Math.abs(Math.abs(q.w) - 1) < 0.01;
@@ -220,7 +241,7 @@ function updateStatus() {
   }
 }
 
-function resetCube() {
+function cancelPendingMoves() {
   animationGeneration++;
   queue.length = 0;
   moving = false;
@@ -229,6 +250,11 @@ function resetCube() {
     cubeGroup.remove(activePivot);
     activePivot = null;
   }
+  scrambleMode = false;
+}
+
+function resetCube() {
+  cancelPendingMoves();
   history = [];
   redoStack = [];
   moveCount = 0;
@@ -238,6 +264,17 @@ function resetCube() {
   statusLabel.textContent = "Resuelto";
   statusLabel.style.color = "#63d8a4";
 }
+
+function changeCubeSize(value) {
+  const nextSize = Number(value);
+  if (!Number.isInteger(nextSize) || nextSize < 2 || nextSize > 7) return;
+  cubeSize = nextSize;
+  sizeBadge.textContent = cubeSize + "×" + cubeSize;
+  description.textContent = TYPE_INFO[cubeSize];
+  resetCube();
+}
+
+typeSelect.addEventListener("change", () => changeCubeSize(typeSelect.value));
 
 document.querySelectorAll("[data-move]").forEach(button => {
   button.addEventListener("click", () => enqueueMove(button.dataset.move));
@@ -260,22 +297,27 @@ redoButton.addEventListener("click", () => {
 });
 
 document.getElementById("scramble").addEventListener("click", () => {
-  queue.length = 0;
-  const faces = ["U", "D", "R", "L", "F", "B"];
-  let previous = "";
-  const sequence = [];
-  for (let i = 0; i < 22; i++) {
-    let face;
-    do { face = faces[Math.floor(Math.random() * faces.length)]; } while (face === previous);
-    previous = face;
-    const suffix = ["", "'", "2"][Math.floor(Math.random() * 3)];
-    sequence.push(face + suffix);
-  }
+  cancelPendingMoves();
   history = [];
   redoStack = [];
   moveCount = 0;
   countLabel.textContent = "0";
+  createSolvedCube();
   updateHistoryButtons();
+  const faces = ["U", "D", "R", "L", "F", "B"];
+  let previousAxis = "";
+  const sequence = [];
+  const scrambleLength = Math.max(20, cubeSize * 8);
+  const axes = { U: "y", D: "y", R: "x", L: "x", F: "z", B: "z" };
+  for (let i = 0; i < scrambleLength; i++) {
+    let face;
+    do {
+      face = faces[Math.floor(Math.random() * faces.length)];
+    } while (axes[face] === previousAxis);
+    previousAxis = axes[face];
+    const suffix = ["", "'", "2"][Math.floor(Math.random() * 3)];
+    sequence.push(face + suffix);
+  }
   scrambleMode = true;
   statusLabel.textContent = "Mezclando…";
   sequence.forEach(move => enqueueMove(move));
@@ -291,9 +333,9 @@ document.getElementById("view-reset").addEventListener("click", () => {
 
 window.addEventListener("keydown", event => {
   if (event.repeat || event.ctrlKey || event.altKey || event.metaKey) return;
+  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement) return;
   const key = event.key.toUpperCase();
   if (!["U", "D", "R", "L", "F", "B"].includes(key)) return;
-  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
   enqueueMove(key + (event.shiftKey ? "'" : ""));
 });
 
@@ -308,6 +350,8 @@ function resize() {
 new ResizeObserver(resize).observe(host);
 resize();
 createSolvedCube();
+sizeBadge.textContent = "3×3";
+description.textContent = TYPE_INFO[3];
 loading.remove();
 
 function render() {
